@@ -316,8 +316,22 @@ def train_model(
     else:
         val_loader = None
     
-    # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
+    # Compute class weights to handle imbalanced dataset
+    # Count samples per class
+    num_noise = train_labels.count(0)
+    num_speech = train_labels.count(1)
+    total = num_noise + num_speech
+    
+    # Inverse frequency weighting: minority class gets higher weight
+    weight_noise = total / (2.0 * num_noise) if num_noise > 0 else 1.0
+    weight_speech = total / (2.0 * num_speech) if num_speech > 0 else 1.0
+    class_weights = torch.tensor([weight_noise, weight_speech], dtype=torch.float32).to(device)
+    
+    print(f"Class distribution - Noise: {num_noise}, Speech: {num_speech}")
+    print(f"Class weights - Noise: {weight_noise:.4f}, Speech: {weight_speech:.4f}")
+    
+    # Loss and optimizer with class weights
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=learning_rate
