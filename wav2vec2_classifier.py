@@ -342,7 +342,7 @@ def train_model(
     
     # Learning rate scheduler - reduce LR when validation loss plateaus
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.5, patience=2, verbose=True
+        optimizer, mode='min', factor=0.5, patience=2
     )
     
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
