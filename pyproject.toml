@@ -1,0 +1,23 @@
+[project]
+name = "callbot-denoiser"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "deepfilternet>=0.5.6",
+    "huggingface-hub<0.24",
+    "librosa>=0.11.0",
+    "onnxruntime>=1.23.2",
+    "pandas>=2.3.3",
+    "pydub>=0.25.1",
+    "soundfile>=0.13.1",
+    "speechbrain>=1.0.3",
+    "torch>=2.9.1",
+    "torchaudio>=2.9.1",
+    "torchcodec>=0.8.1",
+    "transformers>=4.36.0",
+]
+
+# [tool.uv]
+# index-url = "https://registry.aws.platform.vpbank.dev/repository/pypi-proxy/simple"
