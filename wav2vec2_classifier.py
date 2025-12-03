@@ -53,12 +53,14 @@ class Wav2Vec2MLPClassifier(nn.Module):
         # Wav2Vec2-base outputs 768-dim features
         wav2vec2_output_dim = self.wav2vec2.config.hidden_size
         
-        # MLP classifier
+        # MLP classifier with BatchNorm for better gradient flow
         self.classifier = nn.Sequential(
             nn.Linear(wav2vec2_output_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.BatchNorm1d(hidden_dim // 2),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim // 2, 2)  # 2 classes: noise, speech
@@ -332,9 +334,15 @@ def train_model(
     
     # Loss and optimizer with class weights
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
-        lr=learning_rate
+        lr=learning_rate,
+        weight_decay=0.01
+    )
+    
+    # Learning rate scheduler - reduce LR when validation loss plateaus
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=2, verbose=True
     )
     
     history = {"train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
@@ -397,6 +405,9 @@ def train_model(
             val_acc = val_correct / val_total
             history["val_loss"].append(val_loss)
             history["val_acc"].append(val_acc)
+            
+            # Step the scheduler based on validation loss
+            scheduler.step(val_loss)
             
             print(f"Epoch {epoch+1}/{epochs} - "
                   f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
